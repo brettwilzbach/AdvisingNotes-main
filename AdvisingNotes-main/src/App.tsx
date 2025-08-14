@@ -8,6 +8,7 @@ interface ChecklistItem {
   id: string;
   text: string;
   completed: boolean;
+  assignedTo: 'Suzanne' | 'Student' | 'Parent/Guardian';
 }
 
 interface NotesData {
@@ -40,7 +41,8 @@ function App() {
     const newItem: ChecklistItem = {
       id: Date.now().toString(),
       text: '',
-      completed: false
+      completed: false,
+      assignedTo: 'Student'
     };
     setNotesData(prev => ({
       ...prev,
@@ -48,7 +50,7 @@ function App() {
     }));
   };
 
-  const updateActionItem = (id: string, field: 'text' | 'completed', value: string | boolean) => {
+  const updateActionItem = (id: string, field: 'text' | 'completed' | 'assignedTo', value: string | boolean) => {
     setNotesData(prev => ({
       ...prev,
       actionItems: prev.actionItems.map(item =>
@@ -529,39 +531,55 @@ function App() {
               <div className="bg-blue-50/30 rounded-lg border border-blue-200 p-6">
                 <div className="space-y-4">
                   {notesData.actionItems.map((item, index) => (
-                    <div key={item.id} className="flex items-center gap-4 p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
-                      <div className="flex items-center justify-center">
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            checked={item.completed}
-                            onChange={(e) => updateActionItem(item.id, 'completed', e.target.checked)}
-                            className="w-6 h-6 text-emerald-600 border-2 border-slate-300 rounded-lg focus:ring-4 focus:ring-emerald-500/20 transition-all duration-200"
-                          />
-                          {item.completed && (
-                            <Check size={16} className="absolute top-0.5 left-0.5 text-emerald-600 pointer-events-none" />
-                          )}
+                    <div key={item.id} className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center justify-center">
+                          <div className="relative">
+                            <input
+                              type="checkbox"
+                              checked={item.completed}
+                              onChange={(e) => updateActionItem(item.id, 'completed', e.target.checked)}
+                              className="w-6 h-6 text-emerald-600 border-2 border-slate-300 rounded-lg focus:ring-4 focus:ring-emerald-500/20 transition-all duration-200"
+                            />
+                            {item.completed && (
+                              <Check size={16} className="absolute top-0.5 left-0.5 text-emerald-600 pointer-events-none" />
+                            )}
+                          </div>
                         </div>
+                        
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={item.text}
+                            onChange={(e) => updateActionItem(item.id, 'text', e.target.value)}
+                            className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium ${
+                              item.completed ? 'line-through text-slate-500 bg-slate-50' : 'text-slate-700 bg-white'
+                            }`}
+                            placeholder={`Action item ${index + 1}...`}
+                          />
+                        </div>
+                        
+                        <button
+                          onClick={() => deleteActionItem(item.id)}
+                          className="edit-only text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                       
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={item.text}
-                          onChange={(e) => updateActionItem(item.id, 'text', e.target.value)}
-                          className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium ${
-                            item.completed ? 'line-through text-slate-500 bg-slate-50' : 'text-slate-700 bg-white'
-                          }`}
-                          placeholder={`Action item ${index + 1}...`}
-                        />
+                      <div className="flex items-center gap-2 ml-10">
+                        <span className="text-sm font-medium text-slate-600">Assigned to:</span>
+                        <select
+                          value={item.assignedTo}
+                          onChange={(e) => updateActionItem(item.id, 'assignedTo', e.target.value)}
+                          className="edit-only px-3 py-1.5 text-sm border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 bg-white"
+                        >
+                          <option value="Suzanne">Suzanne</option>
+                          <option value="Student">Student</option>
+                          <option value="Parent/Guardian">Parent/Guardian</option>
+                        </select>
+                        <span className="print-only text-sm text-slate-600 font-medium">{item.assignedTo}</span>
                       </div>
-                      
-                      <button
-                        onClick={() => deleteActionItem(item.id)}
-                        className="edit-only text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
-                      >
-                        <Trash2 size={18} />
-                      </button>
                     </div>
                   ))}
 
