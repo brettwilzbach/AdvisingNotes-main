@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <!-- Clock Tower -->
+  <g fill="#1e3a8a" stroke="#1e3a8a" stroke-width="2">
+    <!-- Tower base -->
+    <rect x="320" y="200" width="80" height="120" fill="#1e3a8a"/>
+    <!-- Tower middle -->
+    <rect x="330" y="150" width="60" height="50" fill="#1e3a8a"/>
+    <!-- Tower top -->
+    <polygon points="350,100 360,130 340,130" fill="#1e3a8a"/>
+    <!-- Spires -->
+    <polygon points="340,120 345,100 350,120" fill="#1e3a8a"/>
+    <polygon points="350,120 355,100 360,120" fill="#1e3a8a"/>
+    <!-- Windows -->
+    <rect x="335" y="160" width="12" height="20" fill="white"/>
+    <rect x="353" y="160" width="12" height="20" fill="white"/>
+    <rect x="335" y="210" width="12" height="20" fill="white"/>
+    <rect x="353" y="210" width="12" height="20" fill="white"/>
+    <!-- Clock face -->
+    <circle cx="360" cy="240" r="15" fill="white" stroke="#1e3a8a" stroke-width="2"/>
+    <!-- Clock hands -->
+    <line x1="360" y1="240" x2="360" y2="230" stroke="#1e3a8a" stroke-width="2"/>
+    <line x1="360" y1="240" x2="368" y2="240" stroke="#1e3a8a" stroke-width="1"/>
+  </g>
+  
+  <!-- Graduation Cap -->
+  <g transform="translate(450, 250)">
+    <!-- Cap base -->
+    <polygon points="0,20 80,20 90,10 -10,10" fill="#f59e0b"/>
+    <!-- Cap top -->
+    <polygon points="10,10 70,10 80,0 0,0" fill="#f59e0b"/>
+    <!-- Tassel -->
+    <line x1="75" y1="5" x2="85" y2="-5" stroke="#f59e0b" stroke-width="3"/>
+    <circle cx="85" cy="-5" r="3" fill="#f59e0b"/>
+  </g>
+  
+  <!-- STW Text -->
+  <text x="400" y="380" font-family="Georgia, serif" font-size="120" font-weight="bold" fill="#1e3a8a" text-anchor="middle">STW</text>
+  
+  <!-- College Consulting Text -->
+  <text x="400" y="430" font-family="Georgia, serif" font-size="36" font-weight="normal" fill="#1e3a8a" text-anchor="middle">COLLEGE</text>
+  <text x="400" y="470" font-family="Georgia, serif" font-size="36" font-weight="normal" fill="#1e3a8a" text-anchor="middle">CONSULTING</text>
+</svg>
