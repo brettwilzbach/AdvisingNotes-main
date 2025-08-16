@@ -1,0 +1,225 @@
+import { useState, useRef, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
+import { Trash2, Clock, GraduationCap, FileDown, Plus, Check, Database } from 'lucide-react';
+import jsPDF from 'jspdf';
+import TimeTracker from './components/TimeTracker';
+import CRMRecords, { ClientRecord } from './components/CRMRecords';
+
+interface ChecklistItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  assignedTo: 'Suzanne' | 'Student' | 'Parent/Guardian';
+}
+
+interface NotesData {
+  studentName: string;
+  date: string;
+  conversationPoints: string;
+  topicsCovered: string;
+  goals: string;
+  actionItems: ChecklistItem[];
+}
+
+function App() {
+  const [currentView, setCurrentView] = useState<'notes' | 'timetracker' | 'crm'>('notes');
+  const [clientRecords, setClientRecords] = useState<ClientRecord[]>(() => {
+    const saved = localStorage.getItem('stwClientRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [notesData, setNotesData] = useState<NotesData>(() => {
+    const savedNotes = localStorage.getItem('stwNotesData');
+    return savedNotes ? JSON.parse(savedNotes) : {
+      studentName: '',
+      date: new Date().toISOString().split('T')[0],
+      conversationPoints: '',
+      topicsCovered: '',
+      goals: '',
+      actionItems: []
+    };
+  });
+  
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const addActionItem = () => {
+    const newItem: ChecklistItem = {
+      id: Date.now().toString(),
+      text: '',
+      completed: false,
+      assignedTo: 'Student'
+    };
+    setNotesData((prev: NotesData) => ({
+      ...prev,
+      actionItems: [...prev.actionItems, newItem]
+    }));
+  };
+
+  const updateActionItem = (id: string, field: 'text' | 'completed' | 'assignedTo', value: string | boolean) => {
+    setNotesData((prev: NotesData) => ({
+      ...prev,
+      actionItems: prev.actionItems.map((item: ChecklistItem) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const deleteActionItem = (id: string) => {
+    setNotesData((prev: NotesData) => ({
+      ...prev,
+      actionItems: prev.actionItems.filter(item => item.id !== id)
+    }));
+  };
+
+  // Save notes to localStorage
+  const saveNotes = () => {
+    setSaveStatus('saving');
+    localStorage.setItem('stwNotesData', JSON.stringify(notesData));
+    setTimeout(() => setSaveStatus('saved'), 1000); // Show saved status for 1 second
+  };
+  
+  // Auto-save when navigating away from notes
+  const handleViewChange = (view: 'notes' | 'timetracker' | 'crm') => {
+    if (currentView === 'notes' && view !== 'notes') {
+      saveNotes();
+    }
+    setCurrentView(view);
+  };
+  
+  // Set unsaved status when notes data changes
+  useEffect(() => {
+    if (saveStatus === 'saved') {
+      setSaveStatus('unsaved');
+    }
+  }, [notesData]);
+
+  const deleteRecord = (id: string) => {
+    const updatedRecords = clientRecords.filter((record: ClientRecord) => record.id !== id);
+    setClientRecords(updatedRecords);
+    localStorage.setItem('stwClientRecords', JSON.stringify(updatedRecords));
+  };
+
+  const saveInvoiceRecord = (clientName: string, fileName: string, invoiceData: any) => {
+    const newRecord: ClientRecord = {
+      id: Date.now().toString(),
+      type: 'invoice',
+      clientName: clientName || 'Unknown Client',
+      date: new Date().toISOString().split('T')[0],
+      fileName: fileName,
+      invoiceData: {
+        totalHours: invoiceData.totalHours,
+        totalAmount: invoiceData.totalAmount,
+        hourlyRate: invoiceData.hourlyRate,
+        entries: invoiceData.entries
+      },
+      createdAt: new Date().toISOString()
+    };
+    
+    const updatedRecords = [...clientRecords, newRecord];
+    setClientRecords(updatedRecords);
+    localStorage.setItem('stwClientRecords', JSON.stringify(updatedRecords));
+  };
+
+  const generatePDF = async () => {
+    // PDF generation code would go here
+    // This is a placeholder for the actual implementation
+  };
+
+  if (currentView === 'timetracker') {
+    return <TimeTracker onBack={() => handleViewChange('notes')} onSaveInvoice={saveInvoiceRecord} />;
+  }
+
+  if (currentView === 'crm') {
+    return <CRMRecords onBack={() => handleViewChange('notes')} records={clientRecords} onDeleteRecord={deleteRecord} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Header */}
+      <div className="bg-white shadow-lg border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center">
+                <div className="w-64 h-48 flex items-center justify-center">
+                  <img src="/STW_LOGO.JPG" alt="STW College Consulting" className="w-full h-full object-contain" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => handleViewChange('crm')}
+                className="bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+              >
+                <Database size={18} />
+                Client Records ({clientRecords.length})
+              </button>
+              <button
+                onClick={() => handleViewChange('timetracker')}
+                className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+              >
+                <Clock size={18} />
+                Time Tracker
+              </button>
+              <button
+                onClick={saveNotes}
+                className={`${saveStatus === 'saved' ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' : saveStatus === 'saving' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'} text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm`}
+              >
+                {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving...' : 'Save Notes'}
+              </button>
+              <button
+                onClick={generatePDF}
+                className="bg-gradient-to-r from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+              >
+                <FileDown size={18} />
+                Generate PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Placeholder */}
+      <div ref={printRef} className="max-w-6xl mx-auto px-8 py-12">
+        <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+          <div className="p-8">
+            {/* Student Information Card */}
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-8 mb-10 border border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">
+                    Student Name
+                  </label>
+                  <input
+                    type="text"
+                    value={notesData.studentName}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, studentName: e.target.value }))}
+                    className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
+                    placeholder="Enter student name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide">
+                    Session Date
+                  </label>
+                  <input
+                    type="date"
+                    value={notesData.date}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, date: e.target.value }))}
+                    className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notes sections would go here */}
+            {/* This is a placeholder for the actual implementation */}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default App;
