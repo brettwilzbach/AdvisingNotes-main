@@ -79,24 +79,19 @@ const drawHeader = (doc: jsPDF, date: string, logoData: string = LOGO_BASE64): v
   
   // Add the logo image
   try {
-    // White background for logo (in case logo has transparency)
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(M, 10, 25, 25, 2, 2, 'F');
-    
-    // Add the image to the PDF
-    doc.addImage(logoData, 'JPEG', M + 3.5, 11.5, 21, 21);
+    // Add the image to the PDF - no white background needed for the actual logo
+    doc.addImage(logoData, 'JPEG', M, 5, 30, 30);
+    console.log('Logo added successfully');
   } catch (error) {
     console.error('Error adding logo:', error);
-    // Fallback to white rectangle if image fails
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(M, 10, 25, 25, 2, 2, 'F');
+    // Fallback to empty space if image fails
   }
   
   // Title text
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont('times', 'bold');
-  doc.text('STW College Consulting', M + 25, 20);
+  doc.text('STW College Consulting', M + 35, 20);
   
   // Session Notes text first
   doc.setFontSize(14);
