@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react';
 import { Trash2, Clock, GraduationCap, FileDown, Plus, Check, Database } from 'lucide-react';
 import TimeTracker from './components/TimeTracker';
 import CRMRecords, { ClientRecord } from './components/CRMRecords';
+import { generateSessionNotesPDF } from './pdfUtils';
 
 interface ChecklistItem {
   id: string;
@@ -120,10 +121,34 @@ function App() {
     localStorage.setItem('stwClientRecords', JSON.stringify(updatedRecords));
   };
 
-  const generatePDF = () => {
-    // PDF generation code would go here
-    // This is a placeholder for the actual implementation
-    console.log('PDF generation placeholder');
+  const generatePDF = async () => {
+    try {
+      console.log('Starting PDF generation with data:', notesData);
+      const { fileName } = await generateSessionNotesPDF(notesData);
+      console.log('PDF generated successfully with filename:', fileName);
+      // keep existing CRM save logic exactly as is
+      const newRecord: ClientRecord = {
+      id: Date.now().toString(),
+      type: "session-notes",
+      clientName: notesData.studentName || "Unknown Student",
+      date: notesData.date,
+      fileName,
+      sessionData: {
+        conversationPoints: notesData.conversationPoints,
+        topicsCovered: notesData.topicsCovered,
+        goals: notesData.goals,
+        actionItems: notesData.actionItems.length
+      },
+      createdAt: new Date().toISOString()
+    };
+    const updatedRecords = [...clientRecords, newRecord];
+    setClientRecords(updatedRecords);
+    localStorage.setItem("stwClientRecords", JSON.stringify(updatedRecords));
+    console.log('CRM record saved successfully');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('There was an error generating the PDF. Please check the console for details.');
+    }
   };
 
   if (currentView === 'timetracker') {
