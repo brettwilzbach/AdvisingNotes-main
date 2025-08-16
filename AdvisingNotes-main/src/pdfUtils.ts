@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { LOGO_BASE64 } from './logoBase64';
 
 // Types
 interface ChecklistItem {
@@ -22,9 +23,6 @@ const M = 15; // Margin in mm
 const HEADER_H = 40; // Header height in mm
 const FOOTER_H = 18; // Footer height in mm
 const LINE_H = 4.5; // Line height in mm
-const PAGE_WIDTH = 210; // A4 width in mm
-const PAGE_HEIGHT = 297; // A4 height in mm
-const CONTENT_WIDTH = PAGE_WIDTH - (2 * M); // Content width in mm
 const BLUE_COLOR = [0, 32, 96]; // RGB for blue
 const LIGHT_BLUE_COLOR = [220, 230, 240]; // RGB for light blue background
 const LIGHT_GRAY_COLOR = [240, 240, 240]; // RGB for light gray
@@ -42,6 +40,16 @@ const registerFonts = () => {
   // doc.addFont('Georgia-Bold.ttf', 'Georgia', 'bold');
 };
 */
+
+/**
+ * Get the page dimensions
+ */
+const getPageSize = (doc: jsPDF) => {
+  return { 
+    W: doc.internal.pageSize.getWidth(), 
+    H: doc.internal.pageSize.getHeight() 
+  };
+};
 
 /**
  * Initialize a new PDF document
@@ -62,21 +70,26 @@ const pdfInit = (): jsPDF => {
 /**
  * Draw the header on the current page
  */
-const drawHeader = (doc: jsPDF, date: string): void => {
+const drawHeader = (doc: jsPDF, date: string, logoData: string = LOGO_BASE64): void => {
+  const { W } = getPageSize(doc);
+  
   // Blue header background
   doc.setFillColor(BLUE_COLOR[0], BLUE_COLOR[1], BLUE_COLOR[2]);
-  doc.rect(0, 0, PAGE_WIDTH, HEADER_H, 'F');
+  doc.rect(0, 0, W, HEADER_H, 'F');
   
-  // Logo - use actual logo image
+  // Add the logo image
   try {
-    // Try to add the logo image
-    const logoData = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNmZmZmZmYiLz48dGV4dCB4PSI1MCIgeT0iNTAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzAwMjA2MCI+U1RXPC90ZXh0Pjwvc3ZnPg==';
-    doc.addImage(logoData, 'SVG', M, 10, 20, 20);
+    // White background for logo (in case logo has transparency)
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(M, 10, 25, 25, 2, 2, 'F');
+    
+    // Add the image to the PDF
+    doc.addImage(logoData, 'JPEG', M + 3.5, 11.5, 21, 21);
   } catch (error) {
     console.error('Error adding logo:', error);
     // Fallback to white rectangle if image fails
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(M, 10, 20, 20, 2, 2, 'F');
+    doc.roundedRect(M, 10, 25, 25, 2, 2, 'F');
   }
   
   // Title text
@@ -88,9 +101,7 @@ const drawHeader = (doc: jsPDF, date: string): void => {
   // Session Notes text first
   doc.setFontSize(14);
   const sessionNotesText = 'Session Notes';
-  // Calculate text width manually
-  const sessionNotesWidth = sessionNotesText.length * 3; // Approximate width based on character count
-  doc.text(sessionNotesText, PAGE_WIDTH - M - sessionNotesWidth, 20);
+  doc.text(sessionNotesText, W - M - 30, 20, { align: 'right' });
   
   // Date below Session Notes
   doc.setFontSize(12);
@@ -100,21 +111,20 @@ const drawHeader = (doc: jsPDF, date: string): void => {
     month: 'long',
     day: 'numeric'
   });
-  // Calculate text width manually
-  const dateWidth = formattedDate.length * 2.5; // Approximate width based on character count
-  doc.text(formattedDate, PAGE_WIDTH - M - dateWidth, 30);
+  doc.text(formattedDate, W - M - 30, 30, { align: 'right' });
 };
 
 /**
  * Draw the footer on the current page
  */
 const drawFooter = (doc: jsPDF, pageNum: number, totalPages: number): void => {
-  const footerY = PAGE_HEIGHT - FOOTER_H;
+  const { W, H } = getPageSize(doc);
+  const footerY = H - FOOTER_H;
   
   // Gray divider line
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
-  doc.line(M, footerY + 5, PAGE_WIDTH - M, footerY + 5);
+  doc.line(M, footerY + 5, W - M, footerY + 5);
   
   // Footer text
   doc.setTextColor(100, 100, 100);
@@ -122,12 +132,12 @@ const drawFooter = (doc: jsPDF, pageNum: number, totalPages: number): void => {
   doc.setFont('times', 'normal');
   
   // Center company name
-  doc.text('STW College Consulting', PAGE_WIDTH / 2, footerY + 12, { align: 'center' });
+  doc.text('STW College Consulting', W / 2, footerY + 12, { align: 'center' });
   
   // Right aligned page numbers - only show if more than one page
   if (totalPages > 1) {
     const pageText = `Page ${pageNum} of ${totalPages}`;
-    doc.text(pageText, PAGE_WIDTH - M, footerY + 12);
+    doc.text(pageText, W - M, footerY + 12, { align: 'right' });
   }
 };
 
@@ -146,12 +156,13 @@ const paginateAllPages = (doc: jsPDF): void => {
 /**
  * Ensure there is enough space on the current page, add a new page if needed
  */
-const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, date: string): number => {
-  const maxY = PAGE_HEIGHT - FOOTER_H;
+const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, date: string, logoData?: string): number => {
+  const { H } = getPageSize(doc);
+  const maxY = H - FOOTER_H;
   
   if (currentY + neededHeight > maxY) {
     doc.addPage();
-    drawHeader(doc, date);
+    drawHeader(doc, date, logoData);
     return HEADER_H + 10; // Return new Y position after header
   }
   
@@ -162,33 +173,26 @@ const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, date: s
  * Add student information card
  */
 const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY: number): number => {
-  const cardHeight = 25;
-  let y = ensureSpace(doc, currentY, cardHeight, date);
+  const { W } = getPageSize(doc);
+  const contentWidth = W - (2 * M);
   
-  // Light blue background
+  // Calculate card height
+  const cardHeight = 30;
+  
+  // Ensure space for the card
+  const y = ensureSpace(doc, currentY, cardHeight, date);
+  
+  // Card background
   doc.setFillColor(LIGHT_BLUE_COLOR[0], LIGHT_BLUE_COLOR[1], LIGHT_BLUE_COLOR[2]);
-  doc.roundedRect(M, y, CONTENT_WIDTH, cardHeight, 3, 3, 'F');
+  doc.roundedRect(M, y, contentWidth, cardHeight, 3, 3, 'F');
   
-  // Student name label
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(10);
-  doc.setFont('times', 'bold');
-  doc.text('Student Name', M + 5, y + 7);
-  
-  // Student name value
+  // Student name
   doc.setTextColor(0, 0, 0);
-  doc.setFontSize(12);
-  doc.setFont('times', 'normal');
-  doc.text(studentName || 'Not specified', M + 5, y + 14);
-  
-  // Session date label
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(10);
+  doc.setFontSize(14);
   doc.setFont('times', 'bold');
-  doc.text('Session Date', PAGE_WIDTH / 2, y + 7);
+  doc.text(`Student: ${studentName}`, M + 5, y + 10);
   
-  // Session date value
-  doc.setTextColor(0, 0, 0);
+  // Date
   doc.setFontSize(12);
   doc.setFont('times', 'normal');
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
@@ -196,7 +200,7 @@ const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY:
     month: 'long',
     day: 'numeric'
   });
-  doc.text(formattedDate, PAGE_WIDTH / 2, y + 14);
+  doc.text(formattedDate, W / 2, y + 14, { align: 'center' });
   
   return y + cardHeight + 10;
 };
@@ -204,23 +208,26 @@ const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY:
 /**
  * Add a section with title and content
  */
-const addSection = (doc: jsPDF, title: string, content: string, currentY: number, date: string): number => {
+const addSection = (doc: jsPDF, title: string, content: string, currentY: number, date: string, logoData?: string): number => {
+  const { W } = getPageSize(doc);
+  const contentWidth = W - (2 * M);
+  
   // First check if we have space for at least the title bar
   const titleBarHeight = 10;
-  let y = ensureSpace(doc, currentY, titleBarHeight, date);
+  let y = ensureSpace(doc, currentY, titleBarHeight, date, logoData);
   
   // Calculate content height based on text wrapping
   doc.setFontSize(11);
-  const splitText = doc.splitTextToSize(content || 'No content provided', CONTENT_WIDTH - 10);
+  const splitText = doc.splitTextToSize(content || 'No content provided', contentWidth - 10);
   const contentHeight = splitText.length * LINE_H;
   const totalHeight = titleBarHeight + contentHeight + 10; // 10mm padding
   
   // Second check if we have space for the entire section
-  y = ensureSpace(doc, y, totalHeight, date);
+  y = ensureSpace(doc, y, totalHeight, date, logoData);
   
   // Draw title bar
   doc.setFillColor(BLUE_COLOR[0], BLUE_COLOR[1], BLUE_COLOR[2]);
-  doc.rect(M, y, CONTENT_WIDTH, titleBarHeight, 'F');
+  doc.rect(M, y, contentWidth, titleBarHeight, 'F');
   
   // Title text
   doc.setTextColor(255, 255, 255);
@@ -230,7 +237,7 @@ const addSection = (doc: jsPDF, title: string, content: string, currentY: number
   
   // Content background
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(M, y + titleBarHeight, CONTENT_WIDTH, contentHeight + 10, 2, 2, 'F');
+  doc.roundedRect(M, y + titleBarHeight, contentWidth, contentHeight + 10, 2, 2, 'F');
   
   // Content text
   doc.setTextColor(0, 0, 0);
@@ -244,18 +251,21 @@ const addSection = (doc: jsPDF, title: string, content: string, currentY: number
 /**
  * Add action items section with individual cards
  */
-const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: number, date: string): number => {
+const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: number, date: string, logoData?: string): number => {
   if (actionItems.length === 0) {
     return currentY;
   }
   
+  const { W } = getPageSize(doc);
+  const contentWidth = W - (2 * M);
+  
   // Title bar
   const titleBarHeight = 10;
-  let y = ensureSpace(doc, currentY, titleBarHeight, date);
+  let y = ensureSpace(doc, currentY, titleBarHeight, date, logoData);
   
   // Draw title bar
   doc.setFillColor(BLUE_COLOR[0], BLUE_COLOR[1], BLUE_COLOR[2]);
-  doc.rect(M, y, CONTENT_WIDTH, titleBarHeight, 'F');
+  doc.rect(M, y, contentWidth, titleBarHeight, 'F');
   
   // Title text
   doc.setTextColor(255, 255, 255);
@@ -269,16 +279,16 @@ const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: numb
   actionItems.forEach((item) => {
     // Calculate card height
     doc.setFontSize(11);
-    const splitText = doc.splitTextToSize(item.text || 'No description', CONTENT_WIDTH - 20);
+    const splitText = doc.splitTextToSize(item.text || 'No description', contentWidth - 20);
     const textHeight = splitText.length * LINE_H;
     const cardHeight = textHeight + 20; // Extra space for checkbox and assigned to
     
     // Ensure space for this card
-    y = ensureSpace(doc, y, cardHeight + 5, date);
+    y = ensureSpace(doc, y, cardHeight + 5, date, logoData);
     
     // Card background
     doc.setFillColor(LIGHT_GRAY_COLOR[0], LIGHT_GRAY_COLOR[1], LIGHT_GRAY_COLOR[2]);
-    doc.roundedRect(M, y, CONTENT_WIDTH, cardHeight, 3, 3, 'F');
+    doc.roundedRect(M, y, contentWidth, cardHeight, 3, 3, 'F');
     
     // Checkbox
     doc.setDrawColor(100, 100, 100);
@@ -295,7 +305,7 @@ const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: numb
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(9);
     doc.setFont('times', 'normal');
-    doc.text(`Assigned to: ${item.assignedTo}`, M + 5, y + cardHeight - 5);
+    doc.text(`Assigned to: ${item.assignedTo}`, contentWidth - 5, y + cardHeight - 5, { align: 'right' });
     
     y += cardHeight + 5; // Space after card
   });
@@ -316,8 +326,11 @@ export async function generateSessionNotesPDF(notes: NotesData): Promise<{ fileN
     const doc = pdfInit();
     console.log('jsPDF instance created successfully');
     
+    // Use the base64 encoded logo
+    const logoData = LOGO_BASE64;
+    
     // Draw header on first page
-    drawHeader(doc, notes.date);
+    drawHeader(doc, notes.date, logoData);
     
     // Start Y position after header
     let currentY = HEADER_H + 10;
@@ -326,16 +339,16 @@ export async function generateSessionNotesPDF(notes: NotesData): Promise<{ fileN
     currentY = addStudentCard(doc, notes.studentName, notes.date, currentY);
     
     // Add conversation points section
-    currentY = addSection(doc, 'Conversation Points', notes.conversationPoints, currentY, notes.date);
+    currentY = addSection(doc, 'Conversation Points', notes.conversationPoints, currentY, notes.date, logoData);
     
     // Add topics covered section
-    currentY = addSection(doc, 'Topics Covered', notes.topicsCovered, currentY, notes.date);
+    currentY = addSection(doc, 'Topics Covered', notes.topicsCovered, currentY, notes.date, logoData);
     
     // Add goals section
-    currentY = addSection(doc, 'Goals', notes.goals, currentY, notes.date);
+    currentY = addSection(doc, 'Goals', notes.goals, currentY, notes.date, logoData);
     
     // Add action items
-    currentY = addActionItems(doc, notes.actionItems, currentY, notes.date);
+    currentY = addActionItems(doc, notes.actionItems, currentY, notes.date, logoData);
     
     // Add footers and page numbers
     paginateAllPages(doc);

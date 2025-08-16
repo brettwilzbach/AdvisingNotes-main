@@ -126,25 +126,34 @@ function App() {
       console.log('Starting PDF generation with data:', notesData);
       const { fileName } = await generateSessionNotesPDF(notesData);
       console.log('PDF generated successfully with filename:', fileName);
-      // keep existing CRM save logic exactly as is
+      
+      // Create a unique ID for this record
+      const recordId = Date.now().toString();
+      
+      // Store the full notes data in localStorage for future PDF regeneration
+      localStorage.setItem(`stwNotes-${recordId}`, JSON.stringify(notesData));
+      
+      // Create the CRM record
       const newRecord: ClientRecord = {
-      id: Date.now().toString(),
-      type: "session-notes",
-      clientName: notesData.studentName || "Unknown Student",
-      date: notesData.date,
-      fileName,
-      sessionData: {
-        conversationPoints: notesData.conversationPoints,
-        topicsCovered: notesData.topicsCovered,
-        goals: notesData.goals,
-        actionItems: notesData.actionItems.length
-      },
-      createdAt: new Date().toISOString()
-    };
-    const updatedRecords = [...clientRecords, newRecord];
-    setClientRecords(updatedRecords);
-    localStorage.setItem("stwClientRecords", JSON.stringify(updatedRecords));
-    console.log('CRM record saved successfully');
+        id: recordId,
+        type: "session-notes",
+        clientName: notesData.studentName || "Unknown Student",
+        date: notesData.date,
+        fileName,
+        sessionData: {
+          conversationPoints: notesData.conversationPoints,
+          topicsCovered: notesData.topicsCovered,
+          goals: notesData.goals,
+          actionItems: notesData.actionItems.length
+        },
+        createdAt: new Date().toISOString()
+      };
+      
+      // Update records in state and localStorage
+      const updatedRecords = [...clientRecords, newRecord];
+      setClientRecords(updatedRecords);
+      localStorage.setItem("stwClientRecords", JSON.stringify(updatedRecords));
+      console.log('CRM record saved successfully with ID:', recordId);
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('There was an error generating the PDF. Please check the console for details.');
@@ -156,7 +165,22 @@ function App() {
   }
 
   if (currentView === 'crm') {
-    return <CRMRecords onBack={() => handleViewChange('notes')} records={clientRecords} onDeleteRecord={deleteRecord} />;
+    // Store the notes data in localStorage with record IDs for retrieval
+    clientRecords.forEach(record => {
+      if (record.type === 'session-notes' && record.id) {
+        // Only store if we don't already have this record's data
+        if (!localStorage.getItem(`stwNotes-${record.id}`)) {
+          localStorage.setItem(`stwNotes-${record.id}`, JSON.stringify(notesData));
+        }
+      }
+    });
+    
+    return <CRMRecords 
+      onBack={() => handleViewChange('notes')} 
+      records={clientRecords} 
+      onDeleteRecord={deleteRecord} 
+      notesData={notesData} 
+    />;
   }
 
   return (

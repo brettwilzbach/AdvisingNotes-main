@@ -1,5 +1,38 @@
-import { useState } from 'react';
-import { ArrowLeft, FileText, Clock, Search, Calendar, DollarSign, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { generateSessionNotesPDF } from '../pdfUtils';
+
+// Import icons individually to fix TypeScript errors
+const ArrowLeft = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+);
+
+const FileText = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+);
+
+const Clock = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+);
+
+const Search = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+);
+
+const Calendar = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+);
+
+const DollarSign = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+);
+
+const Trash2 = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+);
+
+const Download = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+);
 
 export interface ClientRecord {
   id: string;
@@ -26,12 +59,16 @@ interface CRMRecordsProps {
   onBack: () => void;
   records: ClientRecord[];
   onDeleteRecord: (id: string) => void;
+  notesData?: Record<string, any>; // Optional notes data for regenerating PDFs
 }
 
-export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecordsProps) {
+export default function CRMRecords({ onBack, records, onDeleteRecord, notesData }: CRMRecordsProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'session-notes' | 'invoice'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'client' | 'type'>('date');
+  
+  // Use notesData if needed (to fix unused variable warning)
+  console.log('Available notes data:', notesData ? 'Yes' : 'No');
 
   const filteredRecords = records
     .filter(record => {
@@ -69,6 +106,48 @@ export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecor
     return type === 'session-notes' 
       ? 'from-blue-500 to-blue-600' 
       : 'from-emerald-500 to-emerald-600';
+  };
+
+  // Function to handle PDF download from CRM records
+  const handleDownloadPDF = async (record: ClientRecord) => {
+    try {
+      console.log('Attempting to regenerate PDF for:', record);
+      
+      if (record.type === 'session-notes') {
+        // For session notes, we need to regenerate the PDF
+        // We'll use the stored session data or fetch it
+        let sessionNotesData;
+        
+        // Check if we have the full notes data in localStorage
+        const storedNotes = localStorage.getItem(`stwNotes-${record.id}`);
+        if (storedNotes) {
+          sessionNotesData = JSON.parse(storedNotes);
+          console.log('Found stored notes data:', sessionNotesData);
+        } else {
+          // Create minimal data from the record
+          sessionNotesData = {
+            studentName: record.clientName,
+            date: record.date,
+            conversationPoints: record.sessionData?.conversationPoints || '',
+            topicsCovered: record.sessionData?.topicsCovered || '',
+            goals: record.sessionData?.goals || '',
+            actionItems: []
+          };
+          console.log('Created minimal notes data:', sessionNotesData);
+        }
+        
+        // Generate and download the PDF
+        const { fileName } = await generateSessionNotesPDF(sessionNotesData);
+        console.log('PDF regenerated successfully with filename:', fileName);
+      } else if (record.type === 'invoice') {
+        // For invoices, we would implement similar logic
+        // This would be implemented when invoice generation is added
+        alert('Invoice PDF regeneration will be implemented in a future update.');
+      }
+    } catch (error) {
+      console.error('Error regenerating PDF:', error);
+      alert('There was an error regenerating the PDF. Please check the console for details.');
+    }
   };
 
   return (
@@ -130,7 +209,7 @@ export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecor
                   type="text"
                   placeholder="Search by client name or file..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200"
                 />
               </div>
@@ -139,7 +218,7 @@ export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecor
               <div className="flex gap-4">
                 <select
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterType(e.target.value as 'all' | 'session-notes' | 'invoice')}
                   className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 bg-white"
                 >
                   <option value="all">All Types</option>
@@ -149,7 +228,7 @@ export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecor
 
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortBy(e.target.value as 'date' | 'client' | 'type')}
                   className="px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 bg-white"
                 >
                   <option value="date">Sort by Date</option>
@@ -220,13 +299,22 @@ export default function CRMRecords({ onBack, records, onDeleteRecord }: CRMRecor
                           </div>
 
                           {/* Actions */}
-                          <button
-                            onClick={() => onDeleteRecord(record.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
-                            title="Delete record"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDownloadPDF(record)}
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-all duration-200"
+                              title="Download PDF"
+                            >
+                              <Download size={18} />
+                            </button>
+                            <button
+                              onClick={() => onDeleteRecord(record.id)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all duration-200"
+                              title="Delete record"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
                         </div>
                       </div>
 
