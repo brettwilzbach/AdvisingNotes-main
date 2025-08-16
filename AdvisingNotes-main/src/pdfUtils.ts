@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { LOGO_BASE64 } from './logoBase64';
+import { getLogoDataURL } from './getLogoDataURL';
 
 // Types
 interface ChecklistItem {
@@ -54,7 +54,10 @@ const getPageSize = (doc: jsPDF) => {
 /**
  * Initialize a new PDF document
  */
-const pdfInit = (): jsPDF => {
+// Note: We're using the default jsPDF constructor in generateSessionNotesPDF
+// but keeping this code commented for reference if needed in the future
+/*
+const createPDF = (): jsPDF => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -66,25 +69,32 @@ const pdfInit = (): jsPDF => {
   
   return doc;
 };
+*/
 
 /**
  * Draw the header on the current page
  */
-const drawHeader = (doc: jsPDF, date: string, logoData: string = LOGO_BASE64): void => {
+const drawHeader = (doc: jsPDF, dateISO: string, logoData?: string | null): void => {
   const { W } = getPageSize(doc);
   
   // Blue header background
   doc.setFillColor(BLUE_COLOR[0], BLUE_COLOR[1], BLUE_COLOR[2]);
   doc.rect(0, 0, W, HEADER_H, 'F');
   
-  // Add the logo image
-  try {
-    // Add the image to the PDF - no white background needed for the actual logo
-    doc.addImage(logoData, 'JPEG', M, 5, 30, 30);
-    console.log('Logo added successfully');
-  } catch (error) {
-    console.error('Error adding logo:', error);
-    // Fallback to empty space if image fails
+  // White tile for logo
+  doc.setFillColor(255, 255, 255);
+  doc.roundedRect(M, 8, 28, 28, 2, 2, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.roundedRect(M, 8, 28, 28, 2, 2, 'D');
+  
+  // Add logo if available
+  if (logoData) {
+    try {
+      // Fits inside the 28×28 tile
+      doc.addImage(logoData, 'PNG', M + 3.5, 11.5, 21, 21);
+    } catch (error) {
+      console.error('Error adding logo:', error);
+    }
   }
   
   // Title text
@@ -101,7 +111,7 @@ const drawHeader = (doc: jsPDF, date: string, logoData: string = LOGO_BASE64): v
   // Date below Session Notes
   doc.setFontSize(12);
   doc.setFont('times', 'normal');
-  const formattedDate = new Date(date).toLocaleDateString('en-US', {
+  const formattedDate = new Date(dateISO).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -138,8 +148,10 @@ const drawFooter = (doc: jsPDF, pageNum: number, totalPages: number): void => {
 
 /**
  * Add page numbers and footers to all pages
+ * Note: This function is now directly implemented in generateSessionNotesPDF
  */
-const paginateAllPages = (doc: jsPDF): void => {
+/*
+const addFootersToAllPages = (doc: jsPDF): void => {
   const totalPages = doc.internal.getNumberOfPages();
   
   for (let i = 1; i <= totalPages; i++) {
@@ -147,17 +159,18 @@ const paginateAllPages = (doc: jsPDF): void => {
     drawFooter(doc, i, totalPages);
   }
 };
+*/
 
 /**
  * Ensure there is enough space on the current page, add a new page if needed
  */
-const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, date: string, logoData?: string): number => {
+const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, dateISO: string, logoData?: string | null): number => {
   const { H } = getPageSize(doc);
   const maxY = H - FOOTER_H;
   
   if (currentY + neededHeight > maxY) {
     doc.addPage();
-    drawHeader(doc, date, logoData);
+    drawHeader(doc, dateISO, logoData);
     return HEADER_H + 10; // Return new Y position after header
   }
   
@@ -167,7 +180,7 @@ const ensureSpace = (doc: jsPDF, currentY: number, neededHeight: number, date: s
 /**
  * Add student information card
  */
-const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY: number): number => {
+const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY: number, logoData?: string | null): number => {
   const { W } = getPageSize(doc);
   const contentWidth = W - (2 * M);
   
@@ -175,7 +188,7 @@ const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY:
   const cardHeight = 30;
   
   // Ensure space for the card
-  const y = ensureSpace(doc, currentY, cardHeight, date);
+  const y = ensureSpace(doc, currentY, cardHeight, date, logoData);
   
   // Card background
   doc.setFillColor(LIGHT_BLUE_COLOR[0], LIGHT_BLUE_COLOR[1], LIGHT_BLUE_COLOR[2]);
@@ -203,7 +216,7 @@ const addStudentCard = (doc: jsPDF, studentName: string, date: string, currentY:
 /**
  * Add a section with title and content
  */
-const addSection = (doc: jsPDF, title: string, content: string, currentY: number, date: string, logoData?: string): number => {
+const addSection = (doc: jsPDF, title: string, content: string, currentY: number, date: string, logoData?: string | null): number => {
   const { W } = getPageSize(doc);
   const contentWidth = W - (2 * M);
   
@@ -246,7 +259,7 @@ const addSection = (doc: jsPDF, title: string, content: string, currentY: number
 /**
  * Add action items section with individual cards
  */
-const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: number, date: string, logoData?: string): number => {
+const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: number, date: string, logoData?: string | null): number => {
   if (actionItems.length === 0) {
     return currentY;
   }
@@ -311,57 +324,70 @@ const addActionItems = (doc: jsPDF, actionItems: ChecklistItem[], currentY: numb
 /**
  * Generate a PDF from session notes
  */
-export async function generateSessionNotesPDF(notes: NotesData): Promise<{ fileName: string }> {
-  console.log('generateSessionNotesPDF called with:', notes);
-  const { studentName } = notes;
-  
+export const generateSessionNotesPDF = async (notes: NotesData): Promise<{ fileName: string }> => {
   try {
-    // Create a new PDF document
-    console.log('Creating new jsPDF instance');
-    const doc = pdfInit();
-    console.log('jsPDF instance created successfully');
+    const doc = new jsPDF();
+    const { H } = getPageSize(doc);
     
-    // Use the base64 encoded logo
-    const logoData = LOGO_BASE64;
+    // Get logo data once
+    const logoData = await getLogoDataURL('/STW_LOGO.JPG');
     
-    // Draw header on first page
+    // Draw header
     drawHeader(doc, notes.date, logoData);
     
-    // Start Y position after header
-    let currentY = HEADER_H + 10;
+    let y = HEADER_H + 10;
     
-    // Add student information
-    currentY = addStudentCard(doc, notes.studentName, notes.date, currentY);
+    // Add student card
+    y = addStudentCard(doc, notes.studentName, notes.date, y, logoData);
+    y += 10;
     
     // Add conversation points section
-    currentY = addSection(doc, 'Conversation Points', notes.conversationPoints, currentY, notes.date, logoData);
+    y = ensureSpace(doc, y, 40, notes.date, logoData);
+    y = addSection(doc, 'Conversation Points', notes.conversationPoints, y, notes.date, logoData);
+    y += 10;
     
     // Add topics covered section
-    currentY = addSection(doc, 'Topics Covered', notes.topicsCovered, currentY, notes.date, logoData);
+    y = ensureSpace(doc, y, 40, notes.date, logoData);
+    y = addSection(doc, 'Topics Covered', notes.topicsCovered, y, notes.date, logoData);
+    y += 10;
     
     // Add goals section
-    currentY = addSection(doc, 'Goals', notes.goals, currentY, notes.date, logoData);
+    y = ensureSpace(doc, y, 40, notes.date, logoData);
+    y = addSection(doc, 'Goals', notes.goals, y, notes.date, logoData);
+    y += 10;
     
-    // Add action items
-    currentY = addActionItems(doc, notes.actionItems, currentY, notes.date, logoData);
+    // Add action items section
+    y = ensureSpace(doc, y, 40, notes.date, logoData);
     
-    // Add footers and page numbers
-    paginateAllPages(doc);
+    // If we're close to the bottom, start a new page for action items
+    if (y > H - 150) {
+      doc.addPage();
+      drawHeader(doc, notes.date, logoData);
+      y = HEADER_H + 10;
+    }
     
-    // Generate file name
-    const fileName = `STW-Session-Notes-${studentName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+    y = addActionItems(doc, notes.actionItems, y, notes.date, logoData);
+    
+    // Add page numbers and footers
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      drawFooter(doc, i, totalPages);
+    }
+    
+    const fileName = `STW-Session-Notes-${notes.studentName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
     console.log('Preparing PDF with filename:', fileName);
-  
+    
     // For browser environment, we need to use a different approach
     const pdfOutput = doc.output('blob');
     const url = URL.createObjectURL(pdfOutput);
-  
+    
     // Create a link and trigger download
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
     link.click();
-  
+    
     // Clean up
     setTimeout(() => URL.revokeObjectURL(url), 100);
     console.log('PDF download triggered');

@@ -124,6 +124,8 @@ function App() {
   const generatePDF = async () => {
     try {
       console.log('Starting PDF generation with data:', notesData);
+      // Save notes before generating PDF to ensure latest data is included
+      saveNotes();
       const { fileName } = await generateSessionNotesPDF(notesData);
       console.log('PDF generated successfully with filename:', fileName);
       
