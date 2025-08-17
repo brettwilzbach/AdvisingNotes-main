@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Clock, Plus, Trash2, FileDown, ArrowLeft } from 'lucide-react';
+import { Clock, Plus, Trash2, FileDown, ChevronLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -132,7 +132,7 @@ export default function TimeTracker({ onBack, onSaveInvoice }: TimeTrackerProps)
                 onClick={onBack}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors duration-200"
               >
-                <ArrowLeft size={20} className="text-slate-600" />
+                <ChevronLeft size={20} className="text-slate-600" />
               </button>
               {/* STW Logo */}
               <div className="flex items-center">
@@ -143,7 +143,7 @@ export default function TimeTracker({ onBack, onSaveInvoice }: TimeTrackerProps)
             </div>
             <button
               onClick={generatePDF}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+              className="bg-gradient-to-r from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
             >
               <FileDown size={18} />
               Generate Invoice
@@ -157,7 +157,7 @@ export default function TimeTracker({ onBack, onSaveInvoice }: TimeTrackerProps)
         <div ref={printRef} className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
           
           {/* STW Invoice Header - Blue and Gold Theme */}
-          <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white p-8 mb-8">
+          <div className="bg-gradient-to-r from-blue-900 to-blue-950 text-white p-8 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div className="w-32 h-32 bg-white rounded-xl flex items-center justify-center shadow-lg border-2 border-blue-200">
@@ -182,32 +182,34 @@ export default function TimeTracker({ onBack, onSaveInvoice }: TimeTrackerProps)
 
             {/* Client Info - Blue Theme */}
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-8 mb-10 border-2 border-blue-300">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
-                    Client Name
-                  </label>
-                  <input
-                    type="text"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    className="w-full p-4 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium text-blue-900 bg-white"
-                    style={{fontFamily: 'Georgia, serif'}}
-                    placeholder="Enter client name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
-                    Hourly Rate ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(Number(e.target.value))}
-                    className="w-full p-4 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium text-blue-900 bg-white"
-                    style={{fontFamily: 'Georgia, serif'}}
-                    placeholder="150"
-                  />
+              <div className="flex flex-col items-center w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
+                  <div>
+                    <label className="block text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
+                      Client Name
+                    </label>
+                    <input
+                      type="text"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium text-blue-900 bg-white"
+                      style={{fontFamily: 'Georgia, serif'}}
+                      placeholder="Enter client name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-blue-800 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
+                      Hourly Rate ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(Number(e.target.value))}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all duration-200 font-medium text-blue-900 bg-white"
+                      style={{fontFamily: 'Georgia, serif'}}
+                      placeholder="150"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,12 +218,12 @@ export default function TimeTracker({ onBack, onSaveInvoice }: TimeTrackerProps)
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                  <div className="w-2 h-8 bg-gradient-to-b from-blue-600 to-blue-800 rounded-full mr-4"></div>
+                  <div className="w-2 h-8 bg-gradient-to-b from-blue-900 to-blue-950 rounded-full mr-4"></div>
                   <h2 className="text-xl font-bold text-blue-800" style={{fontFamily: 'Georgia, serif'}}>Time Entries</h2>
                 </div>
                 <button
                   onClick={addEntry}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm"
+                  className="bg-gradient-to-r from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-semibold transition-all duration-200 shadow-md hover:shadow-lg text-sm"
                   style={{fontFamily: 'Georgia, serif'}}
                 >
                   <Plus size={16} />

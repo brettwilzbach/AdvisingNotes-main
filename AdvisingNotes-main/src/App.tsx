@@ -197,35 +197,48 @@ function App() {
                   <img src="/STW_LOGO.JPG" alt="STW College Consulting" className="w-full h-full object-contain" />
                 </div>
               </div>
+              <div className="text-right">
+                <div className="text-xl font-bold text-slate-800" style={{fontFamily: 'Georgia, serif'}}>STW College Consulting</div>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <button
-                onClick={() => handleViewChange('crm')}
-                className="bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
-              >
-                <Database size={18} />
-                Client Records ({clientRecords.length})
-              </button>
-              <button
-                onClick={() => handleViewChange('timetracker')}
-                className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
-              >
-                <Clock size={18} />
-                Time Tracker
-              </button>
-              <button
-                onClick={saveNotes}
-                className={`${saveStatus === 'saved' ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' : saveStatus === 'saving' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'} text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm`}
-              >
-                {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving...' : 'Save Notes'}
-              </button>
-              <button
-                onClick={generatePDF}
-                className="bg-gradient-to-r from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
-              >
-                <FileDown size={18} />
-                Generate PDF
-              </button>
+            <div className="flex flex-col items-end">
+              <div className="text-right mb-4">
+                <div className="text-xl font-bold text-blue-800" style={{fontFamily: 'Georgia, serif'}}>Session Notes</div>
+                <div className="text-md font-medium text-slate-700">{new Date(notesData.date).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</div>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => handleViewChange('crm')}
+                  className="bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-blue-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+                >
+                  <Database size={18} />
+                  Client Records ({clientRecords.length})
+                </button>
+                <button
+                  onClick={() => handleViewChange('timetracker')}
+                  className="bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+                >
+                  <Clock size={18} />
+                  Time Tracker
+                </button>
+                <button
+                  onClick={saveNotes}
+                  className={`${saveStatus === 'saved' ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800' : saveStatus === 'saving' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800'} text-white px-6 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm`}
+                >
+                  {saveStatus === 'saved' ? '✓ Saved' : saveStatus === 'saving' ? 'Saving...' : 'Save Notes'}
+                </button>
+                <button
+                  onClick={generatePDF}
+                  className="bg-gradient-to-r from-blue-900 to-blue-950 hover:from-blue-950 hover:to-blue-900 text-white px-8 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 shadow-md hover:shadow-lg font-semibold text-sm"
+                >
+                  <FileDown size={18} />
+                  Generate PDF
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -258,31 +271,18 @@ function App() {
 
           <div className="p-8">
             {/* Student Information Card */}
-            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-8 mb-10 border border-slate-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
-                    Student Name
-                  </label>
-                  <input
-                    type="text"
-                    value={notesData.studentName}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, studentName: e.target.value }))}
-                    className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
-                    placeholder="Enter student name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
-                    Session Date
-                  </label>
-                  <input
-                    type="date"
-                    value={notesData.date}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, date: e.target.value }))}
-                    className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
-                  />
-                </div>
+            <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4 mb-6 border border-slate-200 max-w-md">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
+                  Student Name
+                </label>
+                <input
+                  type="text"
+                  value={notesData.studentName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, studentName: e.target.value }))}
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
+                  placeholder="Enter student name"
+                />
               </div>
             </div>
 
