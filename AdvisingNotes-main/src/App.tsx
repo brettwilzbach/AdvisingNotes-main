@@ -197,14 +197,12 @@ function App() {
                   <img src="/STW_LOGO.JPG" alt="" className="w-full h-full object-contain" />
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-xl font-bold text-slate-800" style={{fontFamily: 'Georgia, serif'}}>STW College Consulting</div>
-              </div>
+              {/* Logo only, no text */}
             </div>
             <div className="flex flex-col items-end">
               <div className="text-right mb-4">
                 <div className="text-xl font-bold text-blue-800" style={{fontFamily: 'Georgia, serif'}}>Session Notes</div>
-                <div className="text-md font-medium text-slate-700">{new Date(notesData.date).toLocaleDateString('en-US', { 
+                <div className="text-md font-medium text-slate-700">{new Date().toLocaleDateString('en-US', { 
                   year: 'numeric', 
                   month: 'long', 
                   day: 'numeric' 
