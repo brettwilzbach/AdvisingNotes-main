@@ -194,7 +194,7 @@ function App() {
             <div className="flex items-center space-x-6">
               <div className="flex items-center">
                 <div className="w-64 h-48 flex items-center justify-center">
-                  <img src="/STW_LOGO.JPG" alt="STW College Consulting" className="w-full h-full object-contain" />
+                  <img src="/STW_LOGO.JPG" alt="" className="w-full h-full object-contain" />
                 </div>
               </div>
               <div className="text-right">
