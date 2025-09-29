@@ -272,7 +272,7 @@ function App() {
           <div className="p-8">
             {/* Student Information Card */}
             <div className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-lg p-4 mb-6 border border-slate-200 max-w-md">
-              <div>
+              <div className="mb-4">
                 <label className="block text-sm font-semibold text-slate-700 mb-1 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
                   Student Name
                 </label>
@@ -282,6 +282,24 @@ function App() {
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setNotesData((prev: NotesData) => ({ ...prev, studentName: e.target.value }))}
                   className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
                   placeholder="Enter student name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1 uppercase tracking-wide" style={{fontFamily: 'Georgia, serif'}}>
+                  Session Date
+                </label>
+                <input
+                  type="date"
+                  value={notesData.date}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    console.log('Date changed to:', e.target.value);
+                    const newData = { ...notesData, date: e.target.value };
+                    setNotesData(newData);
+                    // Auto-save when date changes
+                    localStorage.setItem('stwNotesData', JSON.stringify(newData));
+                    setSaveStatus('saved');
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-900/30 focus:border-blue-900 transition-all duration-200 font-medium text-slate-800 bg-white"
                 />
               </div>
             </div>
